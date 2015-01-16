@@ -108,6 +108,9 @@ var next_second;
 var MouseX;
 var MouseY;
 
+// To prevent the Steve Strat
+var new_touch = false;
+
 
 ///////////////////////////////////////////////////////////////
 //                                                           //
@@ -141,6 +144,7 @@ function startGame() {
 function onTouchStart(x,y) {
 
     if (State_Machine == GAME_STATES.game) {
+        new_touch = true;
         processTouch(x,y);
     }
 }
@@ -148,9 +152,10 @@ function onTouchStart(x,y) {
 function onTouchMove(x,y) {
 
     if (State_Machine == GAME_STATES.game) {
-        processTouch(x,y);
+        if (new_touch) {
+            processTouch(x,y);
+        }
     }
-
 }
 
 function onTouchEnd(x,y) {
@@ -358,6 +363,7 @@ function processPath() {
 
     currentPath = [];
     previousSymbol = null;
+    new_touch = false;
 }
 
 function playSuccessSound( path_length ) {
