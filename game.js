@@ -462,7 +462,7 @@ function drawMenu() {
 }
 
 
-function drawButton(id,x,y,trans = 1) {
+function drawButton(id,x,y,trans) {
 
     if (id == BUTTONS.replay) {   
 
