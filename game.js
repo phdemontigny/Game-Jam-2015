@@ -28,17 +28,36 @@ var RED = makeColor(1,0,0);
 var WHITE = makeColor(0.9,0.9,0.9);
 
 var GAME_STATES = {
-    game:0, 
-    end:1,
-    restart:2,
+    menu:0,
+    game:1, 
+    end:2,
 }
 
-var BUTTONS = {right:0}
+var BUTTONS = {
+    right:0,
+    left:1, 
+    bottom: 2  
+}
 
 var RIGHT_BUTTON = {
     x: screenWidth-240,
     y: 560,
-    size: 160
+    width: 160,
+    height: 160
+}
+
+var LEFT_BUTTON = {
+    x: 80,
+    y: 560,
+    width: 160,
+    height: 160
+}
+
+var BOTTOM_BUTTON = {
+    x: 720,
+    y: screenHeight-130,
+    width: 480,
+    height: 100
 }
 
 var MENU_TRANS = 0.95;
@@ -82,7 +101,8 @@ var TIMES_UP = loadSound("WW_Gong.wav");
 
 // Other images
 var TIMER_ICON = loadImage("TimerIcon.png");
-var REFRESH_ICON = loadImage("RefreshIcon.png")
+var REFRESH_ICON = loadImage("RefreshIcon.png");
+var BACK_ICON = loadImage("BackArrow.png");
 
 // Animation Stuff
 var FALL_SPEED = 30; // pixels per frame
@@ -113,6 +133,9 @@ var MouseY;
 // To prevent the Steve Strat
 var new_touch = false;
 
+var example_symbol1 = null;
+var example_symbol2 = null;
+
 
 ///////////////////////////////////////////////////////////////
 //                                                           //
@@ -124,8 +147,10 @@ function onSetup() {
     gameBoard = makeArray(BOARD_X, BOARD_Y);
 
     best = 0;
+    score = 0;
+    timer = 60;
 
-    startGame();
+    State_Machine = GAME_STATES.menu;
 }
 
 function startGame() {
@@ -164,10 +189,15 @@ function onTouchEnd(x,y) {
 
     if (State_Machine == GAME_STATES.game) {
         testButtonPress(BUTTONS.right,x,y);
+        testButtonPress(BUTTONS.left,x,y);
         processPath();
     }
     else if (State_Machine == GAME_STATES.end) {
         testButtonPress(BUTTONS.right,x,y);
+        testButtonPress(BUTTONS.left,x,y);
+    }
+    else if (State_Machine == GAME_STATES.menu) {
+        testButtonPress(BUTTONS.bottom,x,y);
     }
 }
 
@@ -202,7 +232,7 @@ function processTouch(x,y) {
             if (symbol.selected == true) {
                 processPath();
             }
-            else if ( validPath(previousSymbol, symbol) ) {
+            else if ( validPair(previousSymbol, symbol) ) {
                 symbol.selected = true;
                 previousSymbol = symbol;
                 insertFront(currentPath, symbol);
@@ -234,7 +264,9 @@ function onTick() {
         }
     }
 
-    processFalling();
+    if (State_Machine != GAME_STATES.menu) {
+        processFalling();
+    }
 }
 
 function processFalling() {
@@ -425,7 +457,7 @@ function playSuccessSound( path_length ) {
 
 }
 
-function validPath(symbol1, symbol2) {
+function validPair(symbol1, symbol2) {
 
     return (symbol1.shape != symbol2.shape &&
             symbol1.color != symbol2.color &&
@@ -442,31 +474,30 @@ function doGraphics() {
     fillRectangle(GRID_POSITION_X-10, GRID_POSITION_Y-10, GRID_SIZE*BOARD_X+20, GRID_SIZE*BOARD_Y+20, makeColor(0,0,0));
     fillRectangle(GRID_POSITION_X, GRID_POSITION_Y, GRID_SIZE*BOARD_X, GRID_SIZE*BOARD_Y, WHITE);
 
-    drawSymbols();
+    if (State_Machine != GAME_STATES.menu) {
+        drawSymbols();
 
-    // Hide the falling symbols
-    fillRectangle(0,0,screenWidth-640,160,makeColor(0,0,0));
-    fillRectangle(screenWidth-640,0,640,160,PURPLE);
-    fillRectangle(GRID_POSITION_X+10,GRID_POSITION_Y-10,GRID_SIZE*BOARD_X,10,makeColor(0,0,0));
+        // Hide the falling symbols
+        fillRectangle(0,0,screenWidth-640,160,makeColor(0,0,0));
+        fillRectangle(screenWidth-640,0,640,160,PURPLE);
+        fillRectangle(GRID_POSITION_X+10,GRID_POSITION_Y-10,GRID_SIZE*BOARD_X,10,makeColor(0,0,0));
 
-    // Vertical Lines
-    for (i=320; i<=1600; i += 160) {
-       strokeLine(i,160,i,screenHeight-160,makeColor(0,0,0),5);
+        // Vertical Lines
+        for (i=320; i<=1600; i += 160) {
+           strokeLine(i,160,i,screenHeight-160,makeColor(0,0,0),5);
+        }
+        // Horizontal lines
+        for (j=160; j<=1120; j += 160) {
+           strokeLine(320,j,screenWidth-320,j,makeColor(0,0,0),5);
+        }
+
+        highlightSymbols();
+        drawBackground();
     }
-    // Horizontal lines
-    for (j=160; j<=1120; j += 160) {
-       strokeLine(320,j,screenWidth-320,j,makeColor(0,0,0),5);
+
+    if (State_Machine == GAME_STATES.menu) {
+        drawMenu();
     }
-
-    highlightSymbols();
-
-    drawBackground();
-
-}
-
-function drawBackground() {
-
-    var multiplier = length(currentPath)-1;
 
     fillText("Score:",25,30,WHITE,"bold 100px sans-serif","left","top");
     fillText(String(score),360,30,WHITE,"bold 100px sans-serif","left","top");
@@ -475,14 +506,25 @@ function drawBackground() {
     drawImage(TIMER_ICON, 25, 190, 100, 100);
     fillText(":",125,190,WHITE,"bold 100px sans-serif","left","top");
     fillText(String(timer),170,195,WHITE,"bold 100px sans-serif","left","top");
+
+
+}
+
+function drawBackground() {
+
+    var multiplier = length(currentPath)-1;
     
     if (State_Machine == GAME_STATES.game) {
         drawImage(REFRESH_ICON,screenWidth-240,560,160,160);
         testButtonHover(BUTTONS.right);
+        drawImage(BACK_ICON,80,560,160,160);
+        testButtonHover(BUTTONS.left);
     }
     else if (State_Machine == GAME_STATES.end) {
         drawImage(REFRESH_ICON,screenWidth-240,560,160,160);
         testButtonHover(BUTTONS.right);
+        drawImage(BACK_ICON,80,560,160,160);
+        testButtonHover(BUTTONS.left);
     }
 
     if (multiplier > 1) {
@@ -494,47 +536,60 @@ function drawBackground() {
 }
 
 
-/* function drawMenu() {
+function drawMenu() {
 
-    // Black Screen Fade in
-    if (State_Machine == GAME_STATES.end ||
-        State_Machine == GAME_STATES.restart) {
-        // Change transparancy until it reaches the Desired Level
-        var trans;
-        var background_trans;
-        if (State_Machine == GAME_STATES.end) {
-            trans = min(1,(MENU_FADE_IN_TIME - (fade_timer - currentTime()))/MENU_FADE_IN_TIME);
-            background_trans = min(MENU_TRANS,MENU_TRANS*trans);
+    strokeRectangle(  GRID_POSITION_X + GRID_SIZE/2,
+                    GRID_POSITION_Y + GRID_SIZE/2,
+                    GRID_SIZE*(BOARD_X-1), GRID_SIZE*2,makeColor(0,0,0),10);
+
+    fillText("INSERT TITLE",
+            GRID_POSITION_X + GRID_SIZE/2 + 50,
+            GRID_POSITION_Y + GRID_SIZE/2 + 85,
+            makeColor(0,0,0),"150px sans-serif","left","top");
+
+    strokeLine( GRID_POSITION_X + GRID_SIZE*BOARD_X/2,
+                GRID_POSITION_Y + GRID_SIZE*BOARD_Y/2,
+                GRID_POSITION_X + GRID_SIZE*BOARD_X/2,   
+                GRID_POSITION_Y + GRID_SIZE*BOARD_Y - GRID_SIZE/2,
+                makeColor(0,0,0), 5);
+
+
+    fillText("Symbols have 3 Properties:",370,710,makeColor(0,0,0),"bold 40px sans-serif","left","top");
+    fillText("Color:   ",370,820,makeColor(0,0,0),"bold 35px sans-serif","left","top");
+    fillText("Green,",516,820,GREEN,"bold 35px sans-serif","left","top"); 
+    fillText("Purple,",635,820,PURPLE,"bold 35px sans-serif","left","top");
+    fillText("Red",762,820,RED,"bold 35px sans-serif","left","top");  
+    fillText("Shape:   Circle, Square, Triangle",370,880,makeColor(0,0,0),"bold 35px sans-serif","left","top");
+    fillText("Shade:   Open, Solid, Striped",370,940,makeColor(0,0,0),"bold 35px sans-serif","left","top");
+
+    fillText("Click and drag to connect symbols",1025,715,makeColor(0,0,0),"bold 30px sans-serif","left","top");
+    fillText("that share none of the same properties",1000,765,makeColor(0,0,0),"bold 30px sans-serif","left","top");
+    fillText("such as the ones below:",1100,815,makeColor(0,0,0),"bold 30px sans-serif","left","top");
+
+    drawExampleSymbols();
+
+    fillText("Click here to play!",745,screenHeight-105,WHITE,"bold 50px sans-serif","left","top");
+    testButtonHover(BUTTONS.bottom);
+
+}
+
+function drawExampleSymbols() {
+
+    if (example_symbol1 == null && example_symbol2 == null) {
+
+        example_symbol1 = createRandomSymbol(1,0);
+        example_symbol1.px = 1100;
+        example_symbol1.py = 855;
+        example_symbol2 = createRandomSymbol(2,0);
+        while ( !validPair(example_symbol1,example_symbol2) ) {
+            example_symbol2 = createRandomSymbol(2,0);
         }
-        else {
-            trans = max(0,(fade_timer - currentTime()) / MENU_FADE_IN_TIME);
-            background_trans = trans;
-            if (trans == 0) {
-                startGame();
-            }
-        }
-        fillRectangle(0,0,screenWidth,screenHeight,makeColor(0,0,0,background_trans));
-        fillText("Times Up!",485,280,makeColor(0.9,0.9,0.9,trans),"bold 200px sans-serif","left","top");
-        fillText("Score:",620,500,makeColor(0.9,0.9,0.9,trans),"bold 120px sans-serif","left","top");
-        fillText(String(score),1030,500,makeColor(0.9,0.9,0.9,trans),"bold 120px sans-serif","left","top");
-        drawButton(BUTTONS.right,560,720,trans);
-        fillText("Play Again?",780,750,makeColor(0.9,0.9,0.9,trans),"bold 110px sans-serif","left","top");
+        example_symbol2.px = 1260;
+        example_symbol2.py = 855;
     }
-}*/
 
-
-function drawButton(id,x,y,trans) {
-
-    if (id == BUTTONS.right) {   
-
-        offset = 40
-
-        // symbol = createRandomSymbol(x+offset,y+offset);
-    
-        fillRectangle(x,y,160,160,makeColor(0,0,0,trans));
-        fillRectangle(x+5,y+5,150,150,makeColor(0.9,0.9,0.9,trans));
-        testButtonsHover(BUTTONS.right);
-    }
+    drawSymbol(example_symbol1);
+    drawSymbol(example_symbol2);
 
 }
 
@@ -543,15 +598,28 @@ function testButtonHover( id ) {
     if ( id == BUTTONS.right ) {
         x = RIGHT_BUTTON.x;
         y = RIGHT_BUTTON.y;
-        size = RIGHT_BUTTON.size;
+        width = RIGHT_BUTTON.width;
+        height = RIGHT_BUTTON.height;
+    }
+    else if ( id == BUTTONS.left ) {
+        x = LEFT_BUTTON.x;
+        y = LEFT_BUTTON.y;
+        width = LEFT_BUTTON.width;
+        height = LEFT_BUTTON.height;
+    }
+    else if ( id = BUTTONS.bottom ) {
+        x = BOTTOM_BUTTON.x;
+        y = BOTTOM_BUTTON.y;
+        width = BOTTOM_BUTTON.width;
+        height = BOTTOM_BUTTON.height;
     }
 
     if (MouseX >= x && 
-        MouseX <= x + size &&
+        MouseX <= x + width &&
         MouseY >= y && 
-        MouseY <= y + size ) {
+        MouseY <= y + height ) {
         
-        strokeRectangle(x,y,size,size,SELECTED_COLOR,20);
+        strokeRectangle(x,y,width,height,SELECTED_COLOR,20);
     }
 }
 
@@ -563,15 +631,36 @@ function testButtonPress( id, x, y ) {
     if ( id == BUTTONS.right ) {
         button_x = RIGHT_BUTTON.x;
         button_y = RIGHT_BUTTON.y;
-        size = RIGHT_BUTTON.size;
+        width = RIGHT_BUTTON.width;
+        height = RIGHT_BUTTON.height;
+    }
+    else if ( id == BUTTONS.left ) {
+        button_x = LEFT_BUTTON.x;
+        button_y = LEFT_BUTTON.y;
+        width = LEFT_BUTTON.width;
+        height = LEFT_BUTTON.height;
+    }
+    else if ( id = BUTTONS.bottom ) {
+        button_x = BOTTOM_BUTTON.x;
+        button_y = BOTTOM_BUTTON.y;
+        width = BOTTOM_BUTTON.width;
+        height = BOTTOM_BUTTON.height;
     }
 
     if (x >= button_x && 
-        x <= button_x + size &&
+        x <= button_x + width &&
         y >= button_y && 
-        y <= button_y + size ) {
+        y <= button_y + height ) {
 
         if ( id == BUTTONS.right ) {
+            startGame();
+        }
+        else if ( id == BUTTONS.left ) {
+            State_Machine = GAME_STATES.menu;
+            score = 0;
+            timer = 60;
+        }
+        else if ( id == BUTTONS.bottom ) {
             startGame();
         }
     }
@@ -790,4 +879,37 @@ function symbol_object(x, y, shape, color, shade) {
     this.selected = false;
 }
 
-// new symbol(x, y, shape, color, shade);
+
+/*
+
+REJECTED CODE
+
+
+function drawMenu() {
+
+    // Black Screen Fade in
+    if (State_Machine == GAME_STATES.end ||
+        State_Machine == GAME_STATES.restart) {
+        // Change transparancy until it reaches the Desired Level
+        var trans;
+        var background_trans;
+        if (State_Machine == GAME_STATES.end) {
+            trans = min(1,(MENU_FADE_IN_TIME - (fade_timer - currentTime()))/MENU_FADE_IN_TIME);
+            background_trans = min(MENU_TRANS,MENU_TRANS*trans);
+        }
+        else {
+            trans = max(0,(fade_timer - currentTime()) / MENU_FADE_IN_TIME);
+            background_trans = trans;
+            if (trans == 0) {
+                startGame();
+            }
+        }
+        fillRectangle(0,0,screenWidth,screenHeight,makeColor(0,0,0,background_trans));
+        fillText("Times Up!",485,280,makeColor(0.9,0.9,0.9,trans),"bold 200px sans-serif","left","top");
+        fillText("Score:",620,500,makeColor(0.9,0.9,0.9,trans),"bold 120px sans-serif","left","top");
+        fillText(String(score),1030,500,makeColor(0.9,0.9,0.9,trans),"bold 120px sans-serif","left","top");
+        drawButton(BUTTONS.right,560,720,trans);
+        fillText("Play Again?",780,750,makeColor(0.9,0.9,0.9,trans),"bold 110px sans-serif","left","top");
+    }
+}
+*/
