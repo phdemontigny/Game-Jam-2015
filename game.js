@@ -574,9 +574,9 @@ function drawMenu() {
     fillText("Shape:   Circle, Square, Triangle",370,880,makeColor(0,0,0),"bold 35px sans-serif","left","top");
     fillText("Shade:   Open, Solid, Striped",370,940,makeColor(0,0,0),"bold 35px sans-serif","left","top");
 
-    fillText("Click and drag to connect symbols",1025,715,makeColor(0,0,0),"bold 30px sans-serif","left","top");
-    fillText("that share none of the same properties,",1000,765,makeColor(0,0,0),"bold 30px sans-serif","left","top");
-    fillText("such as the ones below:",1100,815,makeColor(0,0,0),"bold 30px sans-serif","left","top");
+    fillText("Click and drag to draw paths such that",1000,715,makeColor(0,0,0),"bold 30px sans-serif","left","top");
+    fillText("no two adjacent symbols share any of the",985,765,makeColor(0,0,0),"bold 30px sans-serif","left","top");
+    fillText("same properties, such as the ones below:",985,815,makeColor(0,0,0),"bold 30px sans-serif","left","top");
 
     drawExampleSymbols();
 
