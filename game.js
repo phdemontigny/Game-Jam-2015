@@ -98,11 +98,15 @@ var SMALL_SUCCESS = loadSound("WW_MainMenu_Select.wav");
 var MED_SUCCESS = loadSound("WW_MainMenu_Start.wav");
 var LARGE_SUCCESS = loadSound("WW_PressStart.wav");
 var TIMES_UP = loadSound("WW_Gong.wav");
+var MENU_START = loadSound("WW_MainMenu_CopyErase_Finish.wav");
+var BUTTON_SOUND = loadSound("WW_PauseMenu_Save.wav");
+var FALL_SOUND = loadSound("WW_Rupee_Bounce.wav");
 
 // Other images
 var TIMER_ICON = loadImage("TimerIcon.png");
 var REFRESH_ICON = loadImage("RefreshIcon.png");
 var BACK_ICON = loadImage("BackArrow.png");
+var TITLE_TEXT = loadImage("TitleText.png");
 
 // Animation Stuff
 var FALL_SPEED = 30; // pixels per frame
@@ -232,6 +236,9 @@ function processTouch(x,y) {
             if (symbol.selected == true) {
                 processPath();
             }
+            if ( !testAdjacent(symbol, previousSymbol) ) {
+                processPath();
+            }
             else if ( validPair(previousSymbol, symbol) ) {
                 symbol.selected = true;
                 previousSymbol = symbol;
@@ -243,6 +250,15 @@ function processTouch(x,y) {
             }
         }
     }
+}
+
+function testAdjacent(symbol1, symbol2) {
+
+    return ((symbol1.x == symbol2.x && symbol1.y == symbol2.y + 1) ||
+            (symbol1.x == symbol2.x && symbol1.y == symbol2.y - 1) ||
+            (symbol1.x == symbol2.x + 1 && symbol1.y == symbol2.y) ||
+            (symbol1.x == symbol2.x - 1 && symbol1.y == symbol2.y));
+
 }
 
 // Called 30 times or more per second
@@ -270,6 +286,9 @@ function onTick() {
 }
 
 function processFalling() {
+
+    // Prevent sound from repeating
+    // var soundPlayed = false;
 
     for (i=0; i<BOARD_X; ++i) {
         var y = length(gameBoard[i]);
@@ -538,14 +557,7 @@ function drawBackground() {
 
 function drawMenu() {
 
-    strokeRectangle(  GRID_POSITION_X + GRID_SIZE/2,
-                    GRID_POSITION_Y + GRID_SIZE/2,
-                    GRID_SIZE*(BOARD_X-1), GRID_SIZE*2,makeColor(0,0,0),10);
-
-    fillText("INSERT TITLE",
-            GRID_POSITION_X + GRID_SIZE/2 + 50,
-            GRID_POSITION_Y + GRID_SIZE/2 + 85,
-            makeColor(0,0,0),"150px sans-serif","left","top");
+    drawImage(TITLE_TEXT, GRID_POSITION_X + GRID_SIZE/2, GRID_POSITION_Y + GRID_SIZE/2,GRID_SIZE*(BOARD_X-1), GRID_SIZE*2);
 
     strokeLine( GRID_POSITION_X + GRID_SIZE*BOARD_X/2,
                 GRID_POSITION_Y + GRID_SIZE*BOARD_Y/2,
@@ -563,7 +575,7 @@ function drawMenu() {
     fillText("Shade:   Open, Solid, Striped",370,940,makeColor(0,0,0),"bold 35px sans-serif","left","top");
 
     fillText("Click and drag to connect symbols",1025,715,makeColor(0,0,0),"bold 30px sans-serif","left","top");
-    fillText("that share none of the same properties",1000,765,makeColor(0,0,0),"bold 30px sans-serif","left","top");
+    fillText("that share none of the same properties,",1000,765,makeColor(0,0,0),"bold 30px sans-serif","left","top");
     fillText("such as the ones below:",1100,815,makeColor(0,0,0),"bold 30px sans-serif","left","top");
 
     drawExampleSymbols();
@@ -654,14 +666,20 @@ function testButtonPress( id, x, y ) {
 
         if ( id == BUTTONS.right ) {
             startGame();
+            playSound(BUTTON_SOUND);
+
         }
         else if ( id == BUTTONS.left ) {
             State_Machine = GAME_STATES.menu;
             score = 0;
             timer = 60;
+            example_symbol1 = null;
+            example_symbol2 = null;
+            playSound(BUTTON_SOUND);
         }
         else if ( id == BUTTONS.bottom ) {
             startGame();
+            playSound(MENU_START);
         }
     }
 
