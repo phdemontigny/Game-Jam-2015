@@ -236,7 +236,7 @@ function processTouch(x,y) {
             if (symbol.selected == true) {
                 processPath();
             }
-            if ( !testAdjacent(symbol, previousSymbol) ) {
+            else if ( !testAdjacent(symbol, previousSymbol) ) {
                 processPath();
             }
             else if ( validPair(previousSymbol, symbol) ) {
